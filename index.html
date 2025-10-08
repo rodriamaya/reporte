@@ -10,7 +10,9 @@
       --card: #24242a;
       --accent: #ffcc80;
       --text: #f5f5f5;
-      --muted: #aaa;
+      --muted: #777;
+      --green: #25d366;
+      --green-hover: #1ebe5d;
     }
 
     body {
@@ -43,9 +45,31 @@
       color: var(--accent);
     }
 
+    .cat-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 0.3rem 0;
+      border-bottom: 1px solid #333;
+    }
+
+    .cat-row:last-child {
+      border-bottom: none;
+    }
+
+    .cat-name {
+      flex: 1;
+    }
+
+    .options {
+      flex-shrink: 0;
+      display: flex;
+      gap: 1rem;
+    }
+
     label {
-      margin-right: 1rem;
       cursor: pointer;
+      font-size: 0.95rem;
     }
 
     textarea, input[type="text"] {
@@ -56,6 +80,7 @@
       border-radius: 6px;
       color: var(--text);
       margin-top: 0.3rem;
+      margin-bottom: 1rem;
     }
 
     textarea:focus, input:focus {
@@ -63,38 +88,7 @@
       background: #383840;
     }
 
-    button {
-      display: block;
-      width: 100%;
-      margin-top: 1rem;
-      padding: 0.75rem;
-      font-size: 1rem;
-      background: var(--accent);
-      color: #222;
-      border: none;
-      border-radius: 6px;
-      cursor: pointer;
-      font-weight: bold;
-      transition: 0.2s ease;
-    }
-
-    button:hover {
-      background: #ffb74d;
-      transform: translateY(-2px);
-    }
-
-    pre {
-      background: #2c2c33;
-      padding: 1rem;
-      border-radius: 6px;
-      white-space: pre-wrap;
-      word-break: break-word;
-    }
-
     a#whatsappLink {
-      display: none;
-      background: #25d366;
-      color: white;
       text-decoration: none;
       text-align: center;
       font-weight: bold;
@@ -102,10 +96,24 @@
       padding: 0.8rem;
       margin-top: 1rem;
       display: block;
+      font-size: 1.1rem;
+      transition: 0.2s ease;
     }
 
-    a#whatsappLink:hover {
-      background: #1ebe5d;
+    a.enabled {
+      background: var(--green);
+      color: white;
+      pointer-events: auto;
+    }
+
+    a.enabled:hover {
+      background: var(--green-hover);
+    }
+
+    a.disabled {
+      background: #444;
+      color: var(--muted);
+      pointer-events: none;
     }
 
     .cat-icon {
@@ -120,49 +128,50 @@
   <h1>Reporte Diario de Gatos</h1>
 
   <form id="reportForm">
+    <label for="reporter">Nombre del responsable:</label>
+    <input type="text" id="reporter" name="reporter" placeholder="Ej: Rodrigo" required />
+
     <fieldset>
       <legend>Gatos</legend>
       <div id="catsList"></div>
     </fieldset>
 
-    <label for="reporter">Nombre del responsable:</label>
-    <input type="text" id="reporter" name="reporter" placeholder="Ej: Rodrigo" required />
-
     <label for="comments">Comentarios:</label>
-    <textarea id="comments" name="comments" placeholder="Notas del día..."></textarea>
-
-    <button type="submit">Generar texto para WhatsApp</button>
+    <textarea id="comments" name="comments" placeholder="Notas del día..." required></textarea>
   </form>
 
-  <h2>Resultado:</h2>
-  <pre id="result"></pre>
-  <a id="whatsappLink" href="#" target="_blank">📱 Compartir por WhatsApp</a>
+  <a id="whatsappLink" href="#" target="_blank" class="disabled">📱 Compartir por WhatsApp</a>
 
   <script>
     const gatos = ["Pelu", "Lilith", "Ruperta", "Isabella", "Kawaii", "Noche", "Whiskas", "Denzel"];
     const catsList = document.getElementById("catsList");
+    const linkEl = document.getElementById("whatsappLink");
+    const form = document.getElementById("reportForm");
 
+    // Crear lista de gatos
     gatos.forEach(gato => {
       const div = document.createElement("div");
+      div.className = "cat-row";
       div.innerHTML = `
-        <strong>${gato}</strong><br>
-        <label><input type="radio" name="${gato}" value="visto" required> Visto</label>
-        <label><input type="radio" name="${gato}" value="no visto"> No visto</label>
-        <br><br>
+        <span class="cat-name">${gato}</span>
+        <div class="options">
+          <label><input type="radio" name="${gato}" value="visto" required> Visto</label>
+          <label><input type="radio" name="${gato}" value="no visto"> No visto</label>
+        </div>
       `;
       catsList.appendChild(div);
     });
 
-    document.getElementById("reportForm").addEventListener("submit", e => {
-      e.preventDefault();
-
+    function generarTexto() {
       const vistos = [];
       const noVistos = [];
 
       gatos.forEach(gato => {
-        const estado = document.querySelector(`input[name="${gato}"]:checked`).value;
-        if (estado === "visto") vistos.push(gato);
-        else noVistos.push(gato);
+        const estado = document.querySelector(`input[name="${gato}"]:checked`);
+        if (estado) {
+          if (estado.value === "visto") vistos.push(gato);
+          else noVistos.push(gato);
+        }
       });
 
       const responsable = document.getElementById("reporter").value.trim();
@@ -170,20 +179,35 @@
       const fecha = new Date().toLocaleDateString("es-AR");
 
       const texto =
-`Responsable: ${responsable}
-Fecha: ${fecha}
-Gatos vistos: ${vistos.join(", ")}
-Gatos no vistos: ${noVistos.join(", ")}
-Comentarios: ${comentarios}`;
+`👤 Responsable: ${responsable}
+📅 Fecha: ${fecha}
+😸 Gatos vistos: ${vistos.join(", ")}
+😿 Gatos no vistos: ${noVistos.join(", ")}
+📝 Comentarios: ${comentarios}`;
 
-      document.getElementById("result").textContent = texto;
+      return { texto, completos: validarFormulario(responsable, comentarios, vistos, noVistos) };
+    }
 
-      const waLink = "https://wa.me/?text=" + encodeURIComponent(texto);
-      const linkEl = document.getElementById("whatsappLink");
-      linkEl.href = waLink;
-      linkEl.style.display = "block";
-    });
+    function validarFormulario(nombre, comentarios, vistos, noVistos) {
+      const totalMarcados = vistos.length + noVistos.length;
+      return nombre && comentarios && totalMarcados === gatos.length;
+    }
+
+    function actualizarLink() {
+      const { texto, completos } = generarTexto();
+
+      if (completos) {
+        linkEl.className = "enabled";
+        linkEl.href = "https://wa.me/?text=" + encodeURIComponent(texto);
+      } else {
+        linkEl.className = "disabled";
+        linkEl.href = "#";
+      }
+    }
+
+    form.addEventListener("change", actualizarLink);
+    form.addEventListener("input", actualizarLink);
+    actualizarLink();
   </script>
 </body>
 </html>
-
