@@ -1,0 +1,189 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Reporte Diario de Gatos</title>
+  <style>
+    :root {
+      --bg: #1b1b1f;
+      --card: #24242a;
+      --accent: #ffcc80;
+      --text: #f5f5f5;
+      --muted: #aaa;
+    }
+
+    body {
+      background-color: var(--bg);
+      color: var(--text);
+      font-family: "Segoe UI", sans-serif;
+      margin: 2rem auto;
+      max-width: 500px;
+      line-height: 1.6;
+    }
+
+    h1 {
+      text-align: center;
+      color: var(--accent);
+      font-size: 1.8rem;
+      margin-bottom: 1rem;
+    }
+
+    fieldset {
+      background-color: var(--card);
+      border: 1px solid #333;
+      border-radius: 10px;
+      margin-bottom: 1.5rem;
+      padding: 1rem;
+      box-shadow: 0 2px 6px rgba(0,0,0,0.4);
+    }
+
+    legend {
+      font-weight: bold;
+      color: var(--accent);
+    }
+
+    label {
+      margin-right: 1rem;
+      cursor: pointer;
+    }
+
+    textarea, input[type="text"] {
+      width: 100%;
+      padding: 0.5rem;
+      background: #2f2f35;
+      border: 1px solid #444;
+      border-radius: 6px;
+      color: var(--text);
+      margin-top: 0.3rem;
+    }
+
+    textarea:focus, input:focus {
+      outline: 2px solid var(--accent);
+      background: #383840;
+    }
+
+    button {
+      display: block;
+      width: 100%;
+      margin-top: 1rem;
+      padding: 0.75rem;
+      font-size: 1rem;
+      background: var(--accent);
+      color: #222;
+      border: none;
+      border-radius: 6px;
+      cursor: pointer;
+      font-weight: bold;
+      transition: 0.2s ease;
+    }
+
+    button:hover {
+      background: #ffb74d;
+      transform: translateY(-2px);
+    }
+
+    pre {
+      background: #2c2c33;
+      padding: 1rem;
+      border-radius: 6px;
+      white-space: pre-wrap;
+      word-break: break-word;
+    }
+
+    a#whatsappLink {
+      display: none;
+      background: #25d366;
+      color: white;
+      text-decoration: none;
+      text-align: center;
+      font-weight: bold;
+      border-radius: 6px;
+      padding: 0.8rem;
+      margin-top: 1rem;
+      display: block;
+    }
+
+    a#whatsappLink:hover {
+      background: #1ebe5d;
+    }
+
+    .cat-icon {
+      text-align: center;
+      font-size: 3rem;
+      margin-bottom: 0.5rem;
+    }
+  </style>
+</head>
+<body>
+  <div class="cat-icon">🐾</div>
+  <h1>Reporte Diario de Gatos</h1>
+
+  <form id="reportForm">
+    <fieldset>
+      <legend>Gatos</legend>
+      <div id="catsList"></div>
+    </fieldset>
+
+    <label for="reporter">Nombre del responsable:</label>
+    <input type="text" id="reporter" name="reporter" placeholder="Ej: Rodrigo" required />
+
+    <label for="comments">Comentarios:</label>
+    <textarea id="comments" name="comments" placeholder="Notas del día..."></textarea>
+
+    <button type="submit">Generar texto para WhatsApp</button>
+  </form>
+
+  <h2>Resultado:</h2>
+  <pre id="result"></pre>
+  <a id="whatsappLink" href="#" target="_blank">📱 Compartir por WhatsApp</a>
+
+  <script>
+    const gatos = ["Pelu", "Lilith", "Ruperta", "Isabella", "Kawaii", "Noche", "Whiskas", "Denzel"];
+    const catsList = document.getElementById("catsList");
+
+    gatos.forEach(gato => {
+      const div = document.createElement("div");
+      div.innerHTML = `
+        <strong>${gato}</strong><br>
+        <label><input type="radio" name="${gato}" value="visto" required> Visto</label>
+        <label><input type="radio" name="${gato}" value="no visto"> No visto</label>
+        <br><br>
+      `;
+      catsList.appendChild(div);
+    });
+
+    document.getElementById("reportForm").addEventListener("submit", e => {
+      e.preventDefault();
+
+      const vistos = [];
+      const noVistos = [];
+
+      gatos.forEach(gato => {
+        const estado = document.querySelector(`input[name="${gato}"]:checked`).value;
+        if (estado === "visto") vistos.push(gato);
+        else noVistos.push(gato);
+      });
+
+      const responsable = document.getElementById("reporter").value.trim();
+      const comentarios = document.getElementById("comments").value.trim();
+      const fecha = new Date().toLocaleDateString("es-AR");
+
+      const texto =
+`Responsable: ${responsable}
+Fecha: ${fecha}
+Gatos vistos: ${vistos.join(", ")}
+Gatos no vistos: ${noVistos.join(", ")}
+Comentarios: ${comentarios}`;
+
+      document.getElementById("result").textContent = texto;
+
+      const waLink = "https://wa.me/?text=" + encodeURIComponent(texto);
+      const linkEl = document.getElementById("whatsappLink");
+      linkEl.href = waLink;
+      linkEl.style.display = "block";
+    });
+  </script>
+</body>
+</html>
+
