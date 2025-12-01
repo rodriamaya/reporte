@@ -59,6 +59,45 @@
 
     .cat-name {
       flex: 1;
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+    }
+
+    .info-icon {
+      cursor: help;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      width: 18px;
+      height: 18px;
+      border-radius: 50%;
+      background: var(--accent);
+      color: var(--bg);
+      font-size: 12px;
+      font-weight: bold;
+      position: relative;
+    }
+
+    .info-icon:hover::after {
+      content: attr(data-description);
+      position: absolute;
+      left: 25px;
+      top: 50%;
+      transform: translateY(-50%);
+      background: #2f2f35;
+      color: var(--text);
+      padding: 0.5rem;
+      border-radius: 6px;
+      border: 1px solid var(--accent);
+      white-space: nowrap;
+      z-index: 10;
+      font-size: 0.85rem;
+      font-weight: normal;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.6);
+      min-width: 200px;
+      white-space: normal;
+      max-width: 250px;
     }
 
     .options {
@@ -118,12 +157,12 @@
 
     .cat-logo {
       display: block;
-      margin: 0 auto 1rem; /* Center the logo and add spacing below */
-      width: 100px; /* Medium size */
-      height: 100px; /* Keep it square */
-      border-radius: 50%; /* Make it rounded */
-      object-fit: cover; /* Ensure the image fits within the circle */
-      box-shadow: 0 2px 6px rgba(0, 0, 0, 0.4); /* Optional: Add a shadow for better appearance */
+      margin: 0 auto 1rem;
+      width: 100px;
+      height: 100px;
+      border-radius: 50%;
+      object-fit: cover;
+      box-shadow: 0 2px 6px rgba(0, 0, 0, 0.4);
     }
   </style>
 </head>
@@ -147,7 +186,18 @@
   <a id="whatsappLink" href="#" target="_blank" class="disabled">📱 Compartir por WhatsApp</a>
 
   <script>
-    const gatos = ["Pelu", "Lilith", "Ruperta", "Isabella", "Denzel", "Kawaii", "Noche", "Whiskas"];
+    const gatos = [
+      { nombre: "Lilith", descripcion: "Gata atigrada, rayas grises, zona invernáculo" },
+      { nombre: "Charmander", descripcion: "Gato atigrado, rayas grises, zona Las Heras y Rep. India" },
+      { nombre: "Ruperta", descripcion: "Gata naranja y blanca, zona invernáculo (celia)" },
+      { nombre: "Pelu", descripcion: "Gata negra, ojos amarillos claro, pelo largo, zona celia" },
+      { nombre: "Kawaii", descripcion: "Gata negra, detalle en oreja izquierda, zona celia" },
+      { nombre: "Denzel", descripcion: "Gato negro esbelto, zona celia" },
+      { nombre: "Isabella", descripcion: "Gata negra, zona mariposario" },
+      { nombre: "Noche", descripcion: "Gata negra, zona baños" },
+      { nombre: "Whiskas", descripcion: "Gato atigrado, zona escuela de jardinería" }
+    ];
+
     const catsList = document.getElementById("catsList");
     const linkEl = document.getElementById("whatsappLink");
     const form = document.getElementById("reportForm");
@@ -157,10 +207,13 @@
       const div = document.createElement("div");
       div.className = "cat-row";
       div.innerHTML = `
-        <span class="cat-name">${gato}</span>
+        <span class="cat-name">
+          ${gato.nombre}
+          <span class="info-icon" data-description="${gato.descripcion}">i</span>
+        </span>
         <div class="options">
-          <label><input type="radio" name="${gato}" value="visto" required> Visto</label>
-          <label><input type="radio" name="${gato}" value="no visto"> No visto</label>
+          <label><input type="radio" name="${gato.nombre}" value="visto" required> Visto</label>
+          <label><input type="radio" name="${gato.nombre}" value="no visto"> No visto</label>
         </div>
       `;
       catsList.appendChild(div);
@@ -171,10 +224,10 @@
       const noVistos = [];
 
       gatos.forEach(gato => {
-        const estado = document.querySelector(`input[name="${gato}"]:checked`);
+        const estado = document.querySelector(`input[name="${gato.nombre}"]:checked`);
         if (estado) {
-          if (estado.value === "visto") vistos.push(gato);
-          else noVistos.push(gato);
+          if (estado.value === "visto") vistos.push(gato.nombre);
+          else noVistos.push(gato.nombre);
         }
       });
 
