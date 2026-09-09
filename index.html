@@ -127,32 +127,72 @@
       background: #383840;
     }
 
-    a#whatsappLink {
+    .checkbox-row {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      margin-bottom: 0.5rem;
+    }
+
+    .checkbox-row input[type="checkbox"] {
+      width: 18px;
+      height: 18px;
+      cursor: pointer;
+    }
+
+    .checkbox-row label {
+      font-weight: bold;
+    }
+
+    #newCatField {
+      display: none;
+    }
+
+    #newCatField.visible {
+      display: block;
+    }
+
+    a#whatsappLink,
+    #genericShareBtn {
       text-decoration: none;
       text-align: center;
       font-weight: bold;
+      border: none;
       border-radius: 6px;
       padding: 0.8rem;
       margin-top: 1rem;
       display: block;
+      width: 100%;
       font-size: 1.1rem;
+      font-family: inherit;
+      cursor: pointer;
       transition: 0.2s ease;
+      box-sizing: border-box;
     }
 
-    a.enabled {
+    .enabled {
       background: var(--green);
       color: white;
       pointer-events: auto;
     }
 
-    a.enabled:hover {
+    .enabled:hover {
       background: var(--green-hover);
     }
 
-    a.disabled {
+    .disabled {
       background: #444;
       color: var(--muted);
       pointer-events: none;
+    }
+
+    #genericShareBtn.enabled {
+      background: var(--accent);
+      color: var(--bg);
+    }
+
+    #genericShareBtn.enabled:hover {
+      background: #ffb84d;
     }
 
     .cat-logo {
@@ -179,11 +219,20 @@
       <div id="catsList"></div>
     </fieldset>
 
+    <div class="checkbox-row">
+      <input type="checkbox" id="newCat" name="newCat" />
+      <label for="newCat">🆕 Gato nuevo</label>
+    </div>
+    <div id="newCatField">
+      <textarea id="newCatDescription" name="newCatDescription" placeholder="Describí el gato físicamente y dónde lo viste" rows="2"></textarea>
+    </div>
+
     <label for="comments">Comentarios:</label>
     <textarea id="comments" name="comments" placeholder="Notas del día..." rows="10" required></textarea>
   </form>
 
   <a id="whatsappLink" href="#" target="_blank" class="disabled">📱 Compartir por WhatsApp</a>
+  <button id="genericShareBtn" type="button" class="disabled" disabled>📤 Compartir (otras apps)</button>
 
   <script>
     const gatos = [
@@ -199,7 +248,19 @@
 
     const catsList = document.getElementById("catsList");
     const linkEl = document.getElementById("whatsappLink");
+    const genericBtn = document.getElementById("genericShareBtn");
     const form = document.getElementById("reportForm");
+    const supportsShare = !!navigator.share;
+    const newCatCheckbox = document.getElementById("newCat");
+    const newCatField = document.getElementById("newCatField");
+    const newCatDescription = document.getElementById("newCatDescription");
+
+    newCatCheckbox.addEventListener("change", () => {
+      const checked = newCatCheckbox.checked;
+      newCatField.classList.toggle("visible", checked);
+      newCatDescription.required = checked;
+      if (!checked) newCatDescription.value = "";
+    });
 
     // Crear lista de gatos
     gatos.forEach(gato => {
@@ -232,21 +293,28 @@
 
       const responsable = document.getElementById("reporter").value.trim();
       const comentarios = document.getElementById("comments").value.trim();
+      const hayGatoNuevo = newCatCheckbox.checked;
+      const descripcionGatoNuevo = newCatDescription.value.trim();
       const fecha = new Date().toLocaleDateString("es-AR");
 
-      const texto =
+      let texto =
 `👤 Responsable: ${responsable}
 📅 Fecha: ${fecha}
 😸 Gatos vistos: ${vistos.join(", ")}
 😿 Gatos no vistos: ${noVistos.join(", ")}
 📝 Comentarios: ${comentarios}`;
 
-      return { texto, completos: validarFormulario(responsable, comentarios, vistos, noVistos) };
+      if (hayGatoNuevo && descripcionGatoNuevo) {
+        texto += `\n🚨🆕🐱 GATO NUEVO: ${descripcionGatoNuevo} 🚨`;
+      }
+
+      return { texto, completos: validarFormulario(responsable, comentarios, vistos, noVistos, hayGatoNuevo, descripcionGatoNuevo) };
     }
 
-    function validarFormulario(nombre, comentarios, vistos, noVistos) {
+    function validarFormulario(nombre, comentarios, vistos, noVistos, hayGatoNuevo, descripcionGatoNuevo) {
       const totalMarcados = vistos.length + noVistos.length;
-      return nombre && comentarios && totalMarcados === gatos.length;
+      const gatoNuevoOk = !hayGatoNuevo || !!descripcionGatoNuevo;
+      return nombre && comentarios && totalMarcados === gatos.length && gatoNuevoOk;
     }
 
     function actualizarLink() {
@@ -255,10 +323,30 @@
       if (completos) {
         linkEl.className = "enabled";
         linkEl.href = "https://wa.me/?text=" + encodeURIComponent(texto);
+
+        if (supportsShare) {
+          genericBtn.className = "enabled";
+          genericBtn.disabled = false;
+          genericBtn.dataset.texto = texto;
+        }
       } else {
         linkEl.className = "disabled";
         linkEl.href = "#";
+        genericBtn.className = "disabled";
+        genericBtn.disabled = true;
       }
+    }
+
+    if (supportsShare) {
+      genericBtn.addEventListener("click", async () => {
+        try {
+          await navigator.share({ text: genericBtn.dataset.texto });
+        } catch (err) {
+          // Usuario canceló el share o falló: no hacemos nada
+        }
+      });
+    } else {
+      genericBtn.style.display = "none";
     }
 
     form.addEventListener("change", actualizarLink);
